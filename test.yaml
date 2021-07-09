@@ -1,0 +1,54 @@
+---
+- name: This Playbook will patch Linux Servers
+  hosts: all
+  become_user: root
+
+
+  tasks: 
+    - name: Patching RHEL/CentOS Servers
+      Shell: |
+             yum clean all
+             register: result
+             debug:
+                var: result
+             yum repolist
+             register: result
+             debug:
+                var: result
+             yum list-security --security
+             register: result
+             debug:
+                var: result
+             yum --security update -n
+             register: result
+             debug:
+                var: result
+             Perform task: Update secuity packages (y/n/c):
+             yum list-security --security -y
+      when: ansible_distribution == "RedHat" or ansible_distribution == "CentOS"
+
+
+    - name: Patching Ubuntu Servers
+      Shell: |
+             grep ^ /etc/apt/sources.list /etc/apt/sources.list.d/*
+             register: result
+             debug:
+                var: result
+             apt-get update -y
+             register: result
+             debug:
+                var: result
+             sudo apt list --upgradable |grep "/$(lsb_release -cs)-security"
+             register: result
+             debug:
+                var: result
+             apt-get -s dist-upgrade | grep "^Inst" | grep -i securi | awk -F " " {'print $2'} | xargs apt-get install             
+             register: result
+             debug:
+                var: result
+             - vars_prompt:
+                 - name: ans-ubuntu
+                   prompt: "Do you want to update security packages in Ubunt? (Y/N)"
+                   private: no         
+      when: ansible_distribution == "Ubuntu"
+             
